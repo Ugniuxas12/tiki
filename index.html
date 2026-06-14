@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elektrinių serveris</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1a;--bg2:#0e1629;--bg3:#141d35;--bg4:#1a2540;
+  --border:rgba(99,179,237,0.13);--accent:#00e5a0;--accent2:#3b82f6;
+  --accent3:#f59e0b;--text:#f0f4ff;--muted:#7a90b0;--danger:#ef4444;
+}
+body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);height:100vh;display:flex;overflow:hidden}
+.app{display:flex;width:100%;height:100%}
+.sidebar{width:186px;min-width:186px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.logo-tag{font-size:9px;letter-spacing:0.18em;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+.logo-name{font-size:15px;font-weight:800;color:#fff}
+.nav{padding:10px 8px;flex:1;display:flex;flex-direction:column;gap:3px}
+.nav-lbl{font-size:9px;letter-spacing:0.15em;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:10px 8px 5px}
+.nb{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid transparent;background:var(--bg3);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:left;width:100%;transition:all 0.15s}
+.nb:hover{background:var(--bg4);border-color:var(--border)}
+.nb.active{background:rgba(0,229,160,0.12);border-color:rgba(0,229,160,0.3);color:var(--accent)}
+.nb .ico{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:auto;flex-shrink:0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.sfooter{padding:12px 16px;border-top:1px solid var(--border)}
+.sstat{display:flex;align-items:center;gap:8px;font-size:11px;font-family:'JetBrains Mono',monospace}
+.sdot2{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2)}
+.ptitle{font-size:12px;font-weight:700;letter-spacing:0.1em;color:#fff}
+.tright{display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)}
+.clk{color:var(--accent);font-weight:600}
+.content{flex:1;overflow-y:auto;padding:18px 22px}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sbadge{font-size:8px;letter-spacing:0.08em;padding:3px 8px;border-radius:99px;font-family:'JetBrains Mono',monospace}
+.sbadge.online{background:rgba(0,229,160,0.15);color:var(--accent)}
+.sbadge.standby{background:rgba(245,158,11,0.15);color:var(--accent3)}
+.sbadge.off{background:rgba(239,68,68,0.15);color:var(--danger)}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.ir:last-child{border-bottom:none}
+.ir-lbl{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:9px}
+.ir-val{font-weight:700;font-size:12px;color:#fff}
+.cc{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px}
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.stitle{font-size:9px;letter-spacing:0.15em;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.sbg{font-size:8px;padding:3px 8px;border-radius:99px;font-family:'JetBrains Mono',monospace;background:rgba(0,229,160,0.1);color:var(--accent)}
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.mc{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc.g::before{background:var(--accent)}.mc.b::before{background:var(--accent2)}.mc.a::before{background:var(--accent3)}.mc.r::before{background:var(--danger)}
+.mc-lbl{font-size:8px;letter-spacing:0.15em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+.mc-val{font-size:22px;font-weight:800;line-height:1;margin-bottom:3px}
+.mc.g .mc-val{color:var(--accent)}.mc.b .mc-val{color:var(--accent2)}.mc.a .mc-val{color:var(--accent3)}.mc.r .mc-val{color:var(--danger)}
+.mc-sub{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.csec{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bc{display:flex;align-items:flex-end;gap:5px;height:74px}
+.bw{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar{width:100%;border-radius:3px 3px 0 0;transition:height 0.8s cubic-bezier(0.34,1.56,0.64,1);background:linear-gradient(180deg,var(--accent),rgba(0,229,160,0.25));min-height:4px}
+.blbl{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.egrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ec{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s}
+.ec:hover{border-color:rgba(0,229,160,0.35);transform:translateY(-2px)}
+.ec.on{border-color:rgba(0,229,160,0.3)}
+.ec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ec-name{font-size:13px;font-weight:700;color:#fff}
+.estats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.esl{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:2px}
+.esv{font-size:12px;font-weight:700;color:#fff}
+.dtopbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.back-btn{background:none;border:1px solid var(--border);color:#fff;padding:6px 14px;border-radius:8px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.back-btn:hover{background:var(--bg4)}
+.dt-title{font-size:15px;font-weight:800;color:#fff;flex:1}
+.dt-loc{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.spill{padding:4px 12px;border-radius:99px;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.spill.online{background:rgba(0,229,160,0.15);color:var(--accent);border:1px solid rgba(0,229,160,0.3)}
+.spill.standby{background:rgba(245,158,11,0.15);color:var(--accent3);border:1px solid rgba(245,158,11,0.3)}
+.istrip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.ib{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.ib-lbl{font-size:8px;letter-spacing:0.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+.ib-val{font-size:18px;font-weight:800;line-height:1}
+.ib-unit{font-size:10px;color:var(--muted);font-weight:400;margin-left:2px}
+.ib.cg .ib-val{color:var(--accent)}.ib.cb .ib-val{color:var(--accent2)}.ib.ca .ib-val{color:var(--accent3)}
+.dcols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sblock{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.sblock-head{font-size:9px;letter-spacing:0.15em;color:var(--accent);font-family:'JetBrains Mono',monospace;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.param{display:flex;flex-direction:column;gap:4px}
+.param-top{display:flex;justify-content:space-between;align-items:center}
+.pname{font-size:11px;font-weight:700;color:#fff}
+.pbadge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800}
+.pbadge.g{color:var(--accent)}.pbadge.b{color:var(--accent2)}.pbadge.p{color:#a855f7}
+.pbadge.a{color:var(--accent3)}.pbadge.r{color:#f87171}.pbadge.teal{color:#22d3ee}
+input[type=range].sl{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;outline:none}
+input[type=range].sl::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;cursor:pointer}
+input[type=range].sl.g{background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--p,2.2%),rgba(255,255,255,0.1) var(--p,2.2%))}
+input[type=range].sl.g::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(0,229,160,0.3)}
+input[type=range].sl.b{background:linear-gradient(to right,var(--accent2) 0%,var(--accent2) var(--p,9%),rgba(255,255,255,0.1) var(--p,9%))}
+input[type=range].sl.b::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(59,130,246,0.3)}
+input[type=range].sl.p{background:linear-gradient(to right,#a855f7 0%,#a855f7 var(--p,0%),rgba(255,255,255,0.1) var(--p,0%))}
+input[type=range].sl.p::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(168,85,247,0.3)}
+input[type=range].sl.a{background:linear-gradient(to right,var(--accent3) 0%,var(--accent3) var(--p,10%),rgba(255,255,255,0.1) var(--p,10%))}
+input[type=range].sl.a::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(245,158,11,0.3)}
+input[type=range].sl.a2{background:linear-gradient(to right,var(--accent3) 0%,var(--accent3) var(--p,28.6%),rgba(255,255,255,0.1) var(--p,28.6%))}
+input[type=range].sl.a2::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(245,158,11,0.3)}
+input[type=range].sl.r{background:linear-gradient(to right,#f87171 0%,#f87171 var(--p,10%),rgba(255,255,255,0.1) var(--p,10%))}
+input[type=range].sl.r::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(248,113,113,0.3)}
+input[type=range].sl.teal{background:linear-gradient(to right,#22d3ee 0%,#22d3ee var(--p,0%),rgba(255,255,255,0.1) var(--p,0%))}
+input[type=range].sl.teal::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(34,211,238,0.3)}
+.plims{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.rblock{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.rblock-head{font-size:9px;letter-spacing:0.15em;color:var(--accent3);font-family:'JetBrains Mono',monospace;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.mode-row{display:flex;gap:6px}
+.mpill{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg4);color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all 0.15s}
+.mpill:hover{color:#fff}
+.mpill.auto-on{border-color:var(--accent2);background:rgba(59,130,246,0.15);color:var(--accent2)}
+.mpill.man-on{border-color:var(--accent3);background:rgba(245,158,11,0.13);color:var(--accent3)}
+.auto-info{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px;font-size:10px;color:var(--accent2);font-family:'JetBrains Mono',monospace;line-height:1.7}
+.ctrl-area{display:flex;align-items:center;gap:14px}
+.rbtns{display:flex;flex-direction:column;gap:8px;flex:1}
+.rbtn{width:100%;height:44px;border-radius:9px;border:1.5px solid rgba(245,158,11,0.3);background:#111c0a;color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.1s;user-select:none;-webkit-user-select:none}
+.rbtn:hover{background:#1a2e0e;border-color:rgba(245,158,11,0.6);color:var(--accent3)}
+.rbtn.pressing{background:rgba(245,158,11,0.18);border-color:var(--accent3);color:var(--accent3);transform:scale(0.97)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.toggle-lbl{font-size:11px;font-weight:700;color:#fff}
+.toggle-sub{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.toggle-wrap{position:relative;width:38px;height:22px;flex-shrink:0}
+.toggle-wrap input{opacity:0;width:100%;height:100%;position:absolute;cursor:pointer;margin:0;z-index:2}
+.toggle-track{width:38px;height:22px;border-radius:11px;transition:background 0.2s;position:absolute;top:0;left:0}
+.toggle-wrap input:checked~.toggle-track{background:var(--accent)}
+.toggle-wrap input:not(:checked)~.toggle-track{background:rgba(255,255,255,0.1)}
+.toggle-thumb{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left 0.2s;pointer-events:none;z-index:1}
+.toggle-wrap input:checked~.toggle-thumb{left:19px}
+.toggle-wrap input:not(:checked)~.toggle-thumb{left:3px}
+.save-row{display:flex;align-items:center;gap:10px;padding-top:2px}
+.sbtn{padding:9px 20px;border-radius:8px;border:1px solid rgba(0,229,160,0.3);background:rgba(0,229,160,0.1);color:var(--accent);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s}
+.sbtn:hover{background:rgba(0,229,160,0.2)}
+.ok-msg{font-size:10px;color:var(--accent);font-family:'JetBrains Mono',monospace;opacity:0;transition:opacity 0.3s}
+.ok-msg.show{opacity:1}
+.err-msg{font-size:10px;color:var(--danger);font-family:'JetBrains Mono',monospace;opacity:0;transition:opacity 0.3s}
+.err-msg.show{opacity:1}
+.vejas-head{font-size:9px;letter-spacing:0.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.oras-top{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.dabar-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.sensor-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-family:'JetBrains Mono',monospace;padding:3px 9px;border-radius:99px;background:rgba(0,229,160,0.1);color:var(--accent);border:1px solid rgba(0,229,160,0.2)}
+.sensor-badge.off{background:rgba(245,158,11,0.1);color:var(--accent3);border-color:rgba(245,158,11,0.2)}
+.pulse-dot{width:5px;height:5px;border-radius:50%;animation:pulse 1.5s infinite}
+.big-temp{font-size:44px;font-weight:800;line-height:1;color:#fff}
+.big-temp span{font-size:20px;color:var(--muted);font-weight:400}
+.dregme-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.dregme-big{font-size:40px;font-weight:800;color:var(--accent2);line-height:1}
+.dregme-big span{font-size:18px;font-weight:400;color:var(--muted)}
+.gauge-row{display:flex;align-items:center;gap:10px}
+.gauge-bar{width:8px;height:100px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.gauge-fill{border-radius:4px;background:linear-gradient(to top,var(--accent2),rgba(59,130,246,0.3));transition:height 1s}
+.gauge-labels{display:flex;flex-direction:column;justify-content:space-between;height:100px;font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.dregme-status{font-size:11px;font-weight:700}
+.grafikai{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.gchart{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px}
+.gchart-head{font-size:9px;letter-spacing:0.15em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.gchart-badge{font-size:8px;padding:2px 7px;border-radius:99px;font-family:'JetBrains Mono',monospace}
+.gchart-badge.temp{background:rgba(239,68,68,0.12);color:#f87171}
+.gchart-badge.hum{background:rgba(59,130,246,0.12);color:var(--accent2)}
+.gchart-badge.vejas{background:rgba(0,229,160,0.12);color:var(--accent)}
+.axis-lbl{font-size:8px;fill:#7a90b0;font-family:'JetBrains Mono',monospace}
+.grid-line{stroke:rgba(255,255,255,0.04);stroke-width:1}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center}
+.stat-lbl{font-size:8px;letter-spacing:0.1em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:5px}
+.stat-val{font-size:16px;font-weight:800}
+.stat-val.r{color:#f87171}.stat-val.b{color:var(--accent2)}.stat-val.g{color:var(--accent)}.stat-val.a{color:var(--accent3)}
+.stat-sub{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.loader{display:flex;align-items:center;justify-content:center;height:200px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.server-err{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 14px;font-size:11px;color:var(--danger);font-family:'JetBrains Mono',monospace;margin-bottom:12px}
+.oro-status-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.oro-status-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.oro-status-title{font-size:11px;font-weight:700;color:#fff}
+.oro-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.oro-metric{text-align:center;padding:10px;background:var(--bg4);border-radius:8px;border:1px solid var(--border)}
+.oro-metric-lbl{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+.oro-metric-val{font-size:18px;font-weight:800}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-tag">SRV · v3.2.0</div>
+      <div class="logo-name">SERVERIS</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-lbl">SISTEMA</div>
+      <button class="nb" id="b-dash" onclick="go('dashboard')"><span class="ico">⊞</span>Dashboard<span class="sdot"></span></button>
+      <button class="nb" id="b-elek" onclick="go('elektrines')"><span class="ico">⚡</span>Elektrinės</button>
+      <button class="nb" id="b-vejo" onclick="go('vejo')"><span class="ico">💨</span>Vėjo jėgainė</button>
+      <button class="nb" id="b-orai" onclick="go('orai')"><span class="ico">🌡</span>Orai</button>
+    </nav>
+    <div class="sfooter">
+      <div class="sstat"><div class="sdot2" id="sdot2"></div><span id="serverStatus">Jungiamasi...</span></div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="ptitle" id="ptitle">PAGRINDINĖ PANELĖ</div>
+      <div class="tright"><span id="dt"></span>&nbsp;<span class="clk" id="clk"></span></div>
+    </div>
+    <div class="content" id="content"><div class="loader">Kraunama...</div></div>
+  </div>
+</div>
+
+<script>
+// ── KONFIGŪRACIJA ─────────────────────────────────────────────────────
+// Jei atidari iš to paties Raspberry Pi — palik tuščią ""
+// Jei atidari iš kito prietaiso per Cloudflare — įrašyk URL:
+// const SERVER = "https://xxxx.trycloudflare.com";
+const SERVER = "";
+
+// ── BŪSENA ────────────────────────────────────────────────────────────
+let rotInt=null, rotKampas=0, elekData=[], detailId=null;
+let oroStotelė={status:'standby',temp:0,hum:0,vejas:0};
+let serverOk=false;
+const dienos=['P','A','T','K','Pn','Š','Se'];
+const barD=[62,78,55,90,71,83,68];
+
+// ── LAIKRODIS ─────────────────────────────────────────────────────────
+function clkFn(){
+  const n=new Date();
+  const e=document.getElementById('clk');if(e)e.textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':');
+  const d=document.getElementById('dt');if(d)d.textContent=n.toISOString().slice(0,10);
+}
+clkFn();setInterval(clkFn,1000);
+
+// ── API ───────────────────────────────────────────────────────────────
+async function apiGet(path){
+  const r=await fetch(SERVER+path,{headers:{'ngrok-skip-browser-warning':'true'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function apiPost(path,data){
+  const r=await fetch(SERVER+path,{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'true'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+// ── DUOMENŲ GAVIMAS ───────────────────────────────────────────────────
+async function fetchData(){
+  try{
+    const [settings,busena,oro]=await Promise.all([
+      apiGet('/api/settings'),
+      apiGet('/api/status'),
+      apiGet('/api/oro-stotelė')
+    ]);
+    elekData=settings.map(e=>({...e,
+      galia:busena[e.id]?.galia||0,
+      temp:busena[e.id]?.temp||0,
+      hum:busena[e.id]?.hum||0,
+      apkrova:busena[e.id]?.apkrova||0,
+      status:e.status||'standby'
+    }));
+    oroStotelė={status:oro.status||'standby',temp:oro.temp||0,hum:oro.hum||0,vejas:oro.vejas||0};
+    serverOk=true;
+    const ss=document.getElementById('serverStatus');
+    const sd=document.getElementById('sdot2');
+    if(ss){ss.textContent='Serveris veikia';ss.style.color='var(--accent)';}
+    if(sd)sd.style.background='var(--accent)';
+    return true;
+  }catch(err){
+    serverOk=false;
+    const ss=document.getElementById('serverStatus');
+    const sd=document.getElementById('sdot2');
+    if(ss){ss.textContent='Serveris nepasiekiamas';ss.style.color='var(--danger)';}
+    if(sd)sd.style.background='var(--danger)';
+    if(elekData.length===0) elekData=[
+      {id:1,name:'Elektrinė 1',status:'standby',galia:0,temp:0,hum:0,apkrova:0,vietove:'Valmantiškiai',sukimoStartSkirtumas:12,sukimoStopPaklaida:10,uzdelsimasSek:1,infoRinkimasMin:1,rytaiKorekcija:10,vakaraiKorekcija:0,maxVejas:15,stabdo:true,rankinis:false,kampas:0},
+      {id:2,name:'Elektrinė 2',status:'standby',galia:0,temp:0,hum:0,apkrova:0,vietove:'Eugenijaus',   sukimoStartSkirtumas:12,sukimoStopPaklaida:10,uzdelsimasSek:1,infoRinkimasMin:1,rytaiKorekcija:10,vakaraiKorekcija:0,maxVejas:20,stabdo:true,rankinis:false,kampas:0},
+      {id:3,name:'Elektrinė 3',status:'standby',galia:0,temp:0,hum:0,apkrova:0,vietove:'Sadausko',     sukimoStartSkirtumas:12,sukimoStopPaklaida:10,uzdelsimasSek:1,infoRinkimasMin:1,rytaiKorekcija:10,vakaraiKorekcija:0,maxVejas:18,stabdo:true,rankinis:false,kampas:0},
+    ];
+    return false;
+  }
+}
+
+// ── IŠSAUGOJIMAS ──────────────────────────────────────────────────────
+async function saveSettings(nr,data){
+  const ok=document.getElementById('okMsg'),err=document.getElementById('errMsg');
+  try{
+    await apiPost(`/api/settings/${nr}`,data);
+    const idx=elekData.findIndex(e=>e.id===nr);
+    if(idx>=0)Object.assign(elekData[idx],data);
+    if(ok){ok.classList.add('show');setTimeout(()=>ok.classList.remove('show'),2500);}
+  }catch(e){
+    if(err){err.classList.add('show');setTimeout(()=>err.classList.remove('show'),3000);}
+  }
+}
+
+// ── NAVIGACIJA ────────────────────────────────────────────────────────
+function setActive(id){
+  ['b-dash','b-elek','b-vejo','b-orai'].forEach(b=>document.getElementById(b)?.classList.remove('active'));
+  if(id)document.getElementById(id)?.classList.add('active');
+}
+
+async function go(page){
+  stopR();
+  const titles={dashboard:'PAGRINDINĖ PANELĖ',elektrines:'ELEKTRINIŲ VALDYMAS',vejo:'VĖJO JĖGAINĖ',orai:'ORAI IR DRĖGMĖ'};
+  const btns={dashboard:'b-dash',elektrines:'b-elek',vejo:'b-vejo',orai:'b-orai'};
+  document.getElementById('ptitle').textContent=titles[page]||'';
+  setActive(btns[page]||null);
+  const C=document.getElementById('content');
+  C.innerHTML='<div class="loader">Kraunama...</div>';
+  await fetchData();
+  if(page==='dashboard')       renderDashboard(C);
+  else if(page==='elektrines') renderElektrines(C);
+  else if(page==='vejo')       renderVejo(C);
+  else if(page==='orai')       renderOrai(C);
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────
+function renderDashboard(C){
+  const onlineK=elekData.filter(e=>e.status==='online').length;
+  C.innerHTML=`
+    ${!serverOk?'<div class="server-err">⚠ Serveris nepasiekiamas — rodomi paskutiniai žinomi duomenys</div>':''}
+    <div class="mrow">
+      <div class="mc g"><div class="mc-lbl">BENDRA GALIA</div><div class="mc-val">${elekData.reduce((s,e)=>s+(e.galia||0),0)}</div><div class="mc-sub">kW</div></div>
+      <div class="mc b"><div class="mc-lbl">TEMPERATŪRA</div><div class="mc-val">${oroStotelė.temp}°</div><div class="mc-sub">${oroStotelė.status==='online'?'oro stotelė':'sensorius standby'}</div></div>
+      <div class="mc a"><div class="mc-lbl">DRĖGMĖ</div><div class="mc-val">${oroStotelė.hum}%</div><div class="mc-sub">${oroStotelė.status==='online'?'oro stotelė':'sensorius standby'}</div></div>
+      <div class="mc g"><div class="mc-lbl">ONLINE</div><div class="mc-val">${onlineK}/${elekData.length}</div><div class="mc-sub">elektrinės</div></div>
+    </div>
+    <div class="csec">
+      <div class="cc"><div style="font-size:9px;letter-spacing:0.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:10px">SAVAITĖS GAMYBA (kW)</div><div class="bc" id="bc"></div></div>
+      <div class="cc"><div style="font-size:9px;letter-spacing:0.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:10px">SISTEMOS BŪKLĖ</div>
+        ${elekData.map(e=>`<div class="ir"><span style="font-size:12px;font-weight:700;color:#fff">${e.name} · ${e.vietove}</span><span class="sbadge ${e.status}">${e.status.toUpperCase()}</span></div>`).join('')}
+        <div class="ir"><span style="font-size:12px;font-weight:700;color:#fff">💨 Vėjo jėgainė</span><span class="sbadge off">NEPRIJUNGTA</span></div>
+        <div class="ir"><span style="font-size:12px;font-weight:700;color:#fff">🌡 Oro stotelė</span><span class="sbadge ${oroStotelė.status}">${oroStotelė.status.toUpperCase()}</span></div>
+      </div>
+    </div>`;
+  const bc=document.getElementById('bc');
+  barD.forEach((v,i)=>{
+    const w=document.createElement('div');w.className='bw';
+    const b=document.createElement('div');b.className='bar';b.style.height='0px';
+    const l=document.createElement('div');l.className='blbl';l.textContent=dienos[i];
+    w.appendChild(b);w.appendChild(l);bc.appendChild(w);
+    setTimeout(()=>{b.style.height=Math.round(v*0.72)+'px';},80+i*60);
+  });
+}
+
+// ── ELEKTRINIŲ SĄRAŠAS ────────────────────────────────────────────────
+function renderElektrines(C){
+  C.innerHTML=`
+    <div class="shdr"><div class="stitle">VISOS ELEKTRINĖS</div><div class="sbg">${elekData.length} ĮRENGINIAI</div></div>
+    <div class="egrid">
+      ${elekData.map(e=>`
+        <div class="ec ${e.status==='online'?'on':''}" onclick="showDetail(${e.id})">
+          <div class="ec-hdr"><div class="ec-name">${e.name}</div><span class="sbadge ${e.status}">${e.status.toUpperCase()}</span></div>
+          <div class="estats">
+            <div><div class="esl">VIETOVĖ</div><div class="esv" style="font-size:10px">${e.vietove}</div></div>
+            <div><div class="esl">UŽDELSIMAS</div><div class="esv">${e.uzdelsimasSek}s</div></div>
+            <div><div class="esl">START SKIRT.</div><div class="esv">${e.sukimoStartSkirtumas}</div></div>
+            <div><div class="esl">STOP ±</div><div class="esv">${e.sukimoStopPaklaida}</div></div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── ELEKTRINĖS DETALĖS ────────────────────────────────────────────────
+function showDetail(id){
+  stopR(); detailId=id;
+  const e=elekData.find(x=>x.id===id);if(!e)return;
+  rotKampas=e.kampas||0;
+  document.getElementById('ptitle').textContent=e.name.toUpperCase()+' · '+e.vietove.toUpperCase();
+  setActive('b-elek');
+  const C=document.getElementById('content');
+  const pct=(v,mn,mx)=>((v-mn)/(mx-mn)*100).toFixed(1)+'%';
+
+  C.innerHTML=`
+    <div class="dtopbar">
+      <button class="back-btn" onclick="go('elektrines')">← Atgal</button>
+      <div><div class="dt-title">${e.name}</div><div class="dt-loc">📍 ${e.vietove}</div></div>
+      <div class="spill ${e.status}">${e.status.toUpperCase()}</div>
+    </div>
+    <div class="istrip">
+      <div class="ib cg"><div class="ib-lbl">GALIA</div><div><span class="ib-val">${e.galia||0}</span><span class="ib-unit">kW</span></div></div>
+      <div class="ib cb"><div class="ib-lbl">TEMPERATŪRA</div><div><span class="ib-val">${e.temp||0}</span><span class="ib-unit">°C</span></div></div>
+      <div class="ib ca"><div class="ib-lbl">DRĖGMĖ</div><div><span class="ib-val">${e.hum||0}</span><span class="ib-unit">%</span></div></div>
+      <div class="ib ca"><div class="ib-lbl">MAKS. VĖJAS</div><div><span class="ib-val" id="vejD">${e.maxVejas}</span><span class="ib-unit">m/s</span></div></div>
+    </div>
+    <div class="dcols">
+      <div class="sblock">
+        <div class="sblock-head">⚙ NUSTATYMAI</div>
+        <div class="param">
+          <div class="param-top"><span class="pname">Sukimo start skirtumas</span><span class="pbadge g" id="ssV">${e.sukimoStartSkirtumas}</span></div>
+          <input type="range" class="sl g" min="1" max="500" value="${e.sukimoStartSkirtumas}" style="--p:${pct(e.sukimoStartSkirtumas,1,500)}" oninput="updN(this,'ssV',1,500)">
+          <div class="plims"><span>1 jautrus</span><span>500 nejautrus</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span class="pname">Sukimo stop paklaida</span><span class="pbadge b">±<span id="spV">${e.sukimoStopPaklaida}</span></span></div>
+          <input type="range" class="sl b" min="1" max="100" value="${e.sukimoStopPaklaida}" style="--p:${pct(e.sukimoStopPaklaida,1,100)}" oninput="updN(this,'spV',1,100)">
+          <div class="plims"><span>1 tikslus</span><span>100</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span class="pname">Uždelsimas</span><span class="pbadge p"><span id="uV">${e.uzdelsimasSek}</span>s</span></div>
+          <input type="range" class="sl p" min="1" max="500" value="${e.uzdelsimasSek}" style="--p:${pct(e.uzdelsimasSek,1,500)}" oninput="updN(this,'uV',1,500)">
+          <div class="plims"><span>1s</span><span>500s</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span class="pname">Info rinkimas</span><span class="pbadge a"><span id="iV">${e.infoRinkimasMin}</span>min</span></div>
+          <input type="range" class="sl a" id="iSlider" min="0" max="10" value="${e.infoRinkimasMin}" style="--p:${pct(e.infoRinkimasMin,0,10)}" oninput="updInfo(this)">
+          <div class="plims"><span>0 min</span><span>10 min</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span class="pname">Rytų korekcija</span><span class="pbadge r">+<span id="rkV">${e.rytaiKorekcija}</span></span></div>
+          <input type="range" class="sl r" min="0" max="100" value="${e.rytaiKorekcija}" style="--p:${pct(e.rytaiKorekcija,0,100)}" oninput="updN(this,'rkV',0,100)">
+          <div class="plims"><span>0</span><span>100</span></div>
+        </div>
+        <div class="param">
+          <div class="param-top"><span class="pname">Vakarų korekcija</span><span class="pbadge teal">+<span id="vkV">${e.vakaraiKorekcija||0}</span></span></div>
+          <input type="range" class="sl teal" min="0" max="100" value="${e.vakaraiKorekcija||0}" style="--p:${pct(e.vakaraiKorekcija||0,0,100)}" oninput="updN(this,'vkV',0,100)">
+          <div class="plims"><span>0</span><span>100</span></div>
+        </div>
+        <div>
+          <div class="vejas-head">🌬 VĖJO APSAUGA</div>
+          <div class="param" style="margin-bottom:8px">
+            <div class="param-top"><span class="pname">Maks. vėjo greitis</span><span class="pbadge a"><span id="mvV">${e.maxVejas}</span> m/s</span></div>
+            <input type="range" class="sl a2" min="5" max="40" value="${e.maxVejas}" style="--p:${pct(e.maxVejas,5,40)}" oninput="updVejas(this)">
+            <div class="plims"><span>5 m/s</span><span>40 m/s</span></div>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-lbl">Automatinis stabdymas</div><div class="toggle-sub">Sustabdo viršijus ribą</div></div>
+            <label class="toggle-wrap">
+              <input type="checkbox" id="stabdoToggle" ${e.stabdo?'checked':''}>
+              <div class="toggle-track"></div><div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+        <div class="save-row">
+          <button class="sbtn" onclick="saveDetail()">💾 Išsaugoti</button>
+          <span class="ok-msg" id="okMsg">✓ Išsaugota</span>
+          <span class="err-msg" id="errMsg">✗ Serveris nepasiekiamas</span>
+        </div>
+      </div>
+      <div class="rblock">
+        <div class="rblock-head">
+          <span>🎯 VALDYMAS</span>
+          <span id="rezB" style="font-size:9px;padding:2px 8px;border-radius:99px;background:${e.rankinis?'rgba(245,158,11,0.15)':'rgba(59,130,246,0.15)'};color:${e.rankinis?'var(--accent3)':'var(--accent2)'}">
+            ${e.rankinis?'RANKINIS':'AUTO'}
+          </span>
+        </div>
+        <div class="mode-row">
+          <button class="mpill ${e.rankinis?'':'auto-on'}" id="pA" onclick="setRez('auto')">⚙ Automatinis</button>
+          <button class="mpill ${e.rankinis?'man-on':''}" id="pM" onclick="setRez('rankinis')">✋ Rankinis</button>
+        </div>
+        <div id="autoInfo" style="display:${e.rankinis?'none':'block'}" class="auto-info">
+          Elektrinė automatiškai seka saulę pagal 4 fotodiodų signalus.<br><br>
+          Start skirtumas: <b id="ai_ss">${e.sukimoStartSkirtumas}</b><br>
+          Stop paklaida: <b>±${e.sukimoStopPaklaida}</b><br>
+          Info rinkimas: <b id="ai_ir">${e.infoRinkimasMin}min</b><br>
+          Rytų kor.: <b>+${e.rytaiKorekcija}</b> &nbsp; Vakarų kor.: <b>+${e.vakaraiKorekcija||0}</b>
+        </div>
+        <div id="manCtrl" style="display:${e.rankinis?'flex':'none'};flex-direction:column;gap:10px">
+          <div class="ctrl-area">
+            <div>
+              <svg id="rotSvg" width="80" height="80" viewBox="0 0 80 80" style="transform:rotate(${rotKampas}deg);transition:transform 0.04s linear">
+                <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(99,179,237,0.1)" stroke-width="8" stroke-dasharray="3 7"/>
+                <circle cx="40" cy="40" r="5" fill="var(--accent3)" opacity="0.9"/>
+                <line x1="40" y1="35" x2="40" y2="10" stroke="var(--accent3)" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="33" y1="45" x2="13" y2="63" stroke="var(--accent3)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+                <line x1="47" y1="45" x2="67" y2="63" stroke="var(--accent3)" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+                <polygon points="40,5 37,12 43,12" fill="var(--accent)" opacity="0.5"/>
+              </svg>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--accent3);text-align:center;margin-top:4px"><span id="degD">${rotKampas}</span>°</div>
+            </div>
+            <div class="rbtns">
+              <button class="rbtn" id="bL" onmousedown="startR(-1)" onmouseup="stopR()" onmouseleave="stopR()" ontouchstart="startR(-1)" ontouchend="stopR()">← Kairė</button>
+              <button class="rbtn" id="bR" onmousedown="startR(1)" onmouseup="stopR()" onmouseleave="stopR()" ontouchstart="startR(1)" ontouchend="stopR()">Dešinė →</button>
+              <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:center">Laikykite nuspaustą</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── SLIDER LOGIKA ─────────────────────────────────────────────────────
+function updN(el,id,mn,mx){
+  const v=parseInt(el.value);
+  document.getElementById(id).textContent=v;
+  el.style.setProperty('--p',((v-mn)/(mx-mn)*100).toFixed(1)+'%');
+  if(id==='ssV'){const a=document.getElementById('ai_ss');if(a)a.textContent=v;}
+}
+function updInfo(el){
+  const v=parseInt(el.value);
+  document.getElementById('iV').textContent=v;
+  el.style.setProperty('--p',((v/10)*100).toFixed(1)+'%');
+  const a=document.getElementById('ai_ir');if(a)a.textContent=v+'min';
+}
+function updVejas(el){
+  const v=parseInt(el.value);
+  document.getElementById('mvV').textContent=v;
+  document.getElementById('vejD').textContent=v;
+  el.style.setProperty('--p',((v-5)/35*100).toFixed(1)+'%');
+}
+function saveDetail(){
+  if(!detailId)return;
+  const data={
+    sukimoStartSkirtumas: parseInt(document.getElementById('ssV').textContent),
+    sukimoStopPaklaida:   parseInt(document.getElementById('spV').textContent),
+    uzdelsimasSek:        parseInt(document.getElementById('uV').textContent),
+    infoRinkimasMin:      parseInt(document.getElementById('iSlider').value),
+    rytaiKorekcija:       parseInt(document.getElementById('rkV').textContent),
+    vakaraiKorekcija:     parseInt(document.getElementById('vkV').textContent),
+    maxVejas:             parseInt(document.getElementById('mvV').textContent),
+    stabdo:               document.getElementById('stabdoToggle').checked,
+    rankinis:             document.getElementById('pM').classList.contains('man-on'),
+    kampas:               rotKampas
+  };
+  saveSettings(detailId,data);
+}
+function setRez(r){
+  const m=r==='rankinis';
+  document.getElementById('pA').className='mpill'+(m?'':' auto-on');
+  document.getElementById('pM').className='mpill'+(m?' man-on':'');
+  document.getElementById('autoInfo').style.display=m?'none':'block';
+  document.getElementById('manCtrl').style.display=m?'flex':'none';
+  const b=document.getElementById('rezB');
+  b.textContent=m?'RANKINIS':'AUTO';
+  b.style.background=m?'rgba(245,158,11,0.15)':'rgba(59,130,246,0.15)';
+  b.style.color=m?'var(--accent3)':'var(--accent2)';
+  if(!m)stopR();
+}
+function startR(dir){
+  stopR();
+  document.getElementById(dir===-1?'bL':'bR')?.classList.add('pressing');
+  rotInt=setInterval(()=>{
+    rotKampas=(rotKampas+dir*2+360)%360;
+    const s=document.getElementById('rotSvg'),d=document.getElementById('degD');
+    if(s)s.style.transform=`rotate(${rotKampas}deg)`;
+    if(d)d.textContent=Math.round(rotKampas);
+  },30);
+}
+function stopR(){
+  if(rotInt){clearInterval(rotInt);rotInt=null;}
+  document.getElementById('bL')?.classList.remove('pressing');
+  document.getElementById('bR')?.classList.remove('pressing');
+}
+
+// ── VĖJO JĖGAINĖ ─────────────────────────────────────────────────────
+function renderVejo(C){
+  C.innerHTML=`
+    <div class="shdr"><div class="stitle">VĖJO JĖGAINĖ</div><div style="font-size:8px;padding:3px 8px;border-radius:99px;font-family:'JetBrains Mono',monospace;background:rgba(239,68,68,0.1);color:var(--danger)">NEPRIJUNGTA</div></div>
+    <div class="cc" style="margin-bottom:12px">
+      <div style="font-size:9px;letter-spacing:0.12em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:10px">VĖJO GREITIS (iš oro stotelės)</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">
+        <span style="font-size:36px;font-weight:800;color:var(--accent)">${oroStotelė.vejas}</span>
+        <span style="font-size:14px;color:var(--muted)">m/s</span>
+        <span class="sbadge ${oroStotelė.status}" style="margin-left:8px">${oroStotelė.status.toUpperCase()}</span>
+      </div>
+      <div class="ir"><span class="ir-lbl">ORO STOTELĖ</span><span class="ir-val">${oroStotelė.status==='online'?'Prisijungusi':'Neprisijungusi'}</span></div>
+    </div>
+    <div class="cc" style="text-align:center;padding:30px">
+      <div style="font-size:40px;margin-bottom:10px">💨</div>
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px">Vėjo jėgainė dar neparuošta</div>
+      <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">Rodikliai bus atnaujinti kai bus prijungta</div>
+    </div>`;
+}
+
+// ── ORAI ──────────────────────────────────────────────────────────────
+function humStatus(h){
+  if(h===0)return{txt:'Sensorius standby',col:'var(--muted)'};
+  if(h<30)return{txt:'Sausa',col:'#f87171'};
+  if(h<50)return{txt:'Normalu',col:'var(--accent)'};
+  if(h<70)return{txt:'Komfortiška',col:'var(--accent2)'};
+  if(h<85)return{txt:'Drėgna',col:'var(--accent3)'};
+  return{txt:'Labai drėgna',col:'#f87171'};
+}
+
+function renderOrai(C){
+  const{temp,hum,vejas,status}=oroStotelė;
+  const isOnline=status==='online';
+  const hs=humStatus(hum);
+  const dienos=['P','A','T','K','Pn','Š','Se'];
+  const td=[0,0,0,0,0,0,0],hd=[0,0,0,0,0,0,0],vd=[0,0,0,0,0,0,0];
+  const lx=30+6*30+15,fx=30;
+  const tpts=td.map((v,i)=>`${30+i*30+15},${75-(v/30)*70}`).join(' L');
+  const hpts=hd.map((v,i)=>`${30+i*30+15},${75-(v/100)*70}`).join(' L');
+  const vpts=vd.map((v,i)=>`${30+i*30+15},${75-(v/20)*70}`).join(' L');
+
+  C.innerHTML=`
+    <div class="oro-status-card">
+      <div class="oro-status-head">
+        <div class="oro-status-title">🌡 ORO STOTELĖ</div>
+        <span class="sbadge ${status}">${status.toUpperCase()}</span>
+      </div>
+      <div class="oro-metrics">
+        <div class="oro-metric">
+          <div class="oro-metric-lbl">TEMPERATŪRA</div>
+          <div class="oro-metric-val" style="color:#f87171">${temp}<span style="font-size:12px;color:var(--muted)">°C</span></div>
+        </div>
+        <div class="oro-metric">
+          <div class="oro-metric-lbl">DRĖGMĖ</div>
+          <div class="oro-metric-val" style="color:var(--accent2)">${hum}<span style="font-size:12px;color:var(--muted)">%</span></div>
+        </div>
+        <div class="oro-metric">
+          <div class="oro-metric-lbl">VĖJO GREITIS</div>
+          <div class="oro-metric-val" style="color:var(--accent)">${vejas}<span style="font-size:12px;color:var(--muted)">m/s</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="oras-top">
+      <div class="dabar-card">
+        <div>
+          <div style="font-size:9px;letter-spacing:0.15em;color:var(--accent);font-family:'JetBrains Mono',monospace;margin-bottom:6px">TEMPERATŪRA</div>
+          <div class="sensor-badge ${isOnline?'':'off'}">
+            <div class="pulse-dot" style="background:${isOnline?'var(--accent)':'var(--accent3)'}"></div>
+            ${isOnline?'LIVE · Oro stotelė':'Oro stotelė standby'}
+          </div>
+        </div>
+        <div class="big-temp">${temp}<span>°C</span></div>
+        <div class="ir"><span class="ir-lbl">VĖJO GREITIS</span><span class="ir-val" style="color:var(--accent)">${vejas} m/s</span></div>
+      </div>
+      <div class="dregme-card">
+        <div style="font-size:9px;letter-spacing:0.15em;color:var(--accent2);font-family:'JetBrains Mono',monospace">DRĖGMĖ</div>
+        <div style="display:flex;align-items:center;gap:14px;flex:1">
+          <div class="gauge-row">
+            <div class="gauge-labels"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+            <div class="gauge-bar"><div class="gauge-fill" style="height:${hum}%"></div></div>
+          </div>
+          <div>
+            <div class="dregme-big">${hum}<span>%</span></div>
+            <div class="dregme-status" style="color:${hs.col};margin-top:4px">${hs.txt}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grafikai">
+      <div class="gchart">
+        <div class="gchart-head"><span>SAVAITĖS TEMPERATŪRA</span><span class="gchart-badge temp">°C</span></div>
+        <svg width="100%" viewBox="0 0 240 88" height="80">
+          <defs><linearGradient id="gt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f87171" stop-opacity="0.3"/><stop offset="100%" stop-color="#f87171" stop-opacity="0"/></linearGradient></defs>
+          ${[0,25,50,75].map(y=>`<line class="grid-line" x1="30" y1="${y}" x2="240" y2="${y}"/>`).join('')}
+          <text class="axis-lbl" x="0" y="4">30°</text><text class="axis-lbl" x="0" y="54">15°</text><text class="axis-lbl" x="0" y="79">0°</text>
+          ${dienos.map((d,i)=>`<text class="axis-lbl" text-anchor="middle" x="${30+i*30+15}" y="88">${d}</text>`).join('')}
+          <path fill="url(#gt)" opacity="0.3" d="M${tpts} L${lx},75 L${fx},75 Z"/>
+          <path fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" d="M${tpts}"/>
+          ${td.map((v,i)=>`<circle fill="#f87171" cx="${30+i*30+15}" cy="${75-(v/30)*70}" r="2.5"/>`).join('')}
+        </svg>
+      </div>
+      <div class="gchart">
+        <div class="gchart-head"><span>SAVAITĖS VĖJAS</span><span class="gchart-badge vejas">m/s</span></div>
+        <svg width="100%" viewBox="0 0 240 88" height="80">
+          <defs><linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="0.3"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/></linearGradient></defs>
+          ${[0,25,50,75].map(y=>`<line class="grid-line" x1="30" y1="${y}" x2="240" y2="${y}"/>`).join('')}
+          <text class="axis-lbl" x="0" y="4">20</text><text class="axis-lbl" x="0" y="54">10</text><text class="axis-lbl" x="0" y="79">0</text>
+          ${dienos.map((d,i)=>`<text class="axis-lbl" text-anchor="middle" x="${30+i*30+15}" y="88">${d}</text>`).join('')}
+          <path fill="url(#gv)" opacity="0.3" d="M${vpts} L${lx},75 L${fx},75 Z"/>
+          <path fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" d="M${vpts}"/>
+          ${vd.map((v,i)=>`<circle fill="var(--accent)" cx="${30+i*30+15}" cy="${75-(v/20)*70}" r="2.5"/>`).join('')}
+        </svg>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-lbl">TEMP. DABAR</div><div class="stat-val a">${temp}°</div><div class="stat-sub">oro stotelė</div></div>
+      <div class="stat-box"><div class="stat-lbl">DRĖGMĖ DABAR</div><div class="stat-val b">${hum}%</div><div class="stat-sub">oro stotelė</div></div>
+      <div class="stat-box"><div class="stat-lbl">VĖJO GREITIS</div><div class="stat-val g">${vejas}</div><div class="stat-sub">m/s</div></div>
+      <div class="stat-box"><div class="stat-lbl">ORO STOTELĖ</div><div class="stat-val ${isOnline?'g':'a'}">${isOnline?'OK':'—'}</div><div class="stat-sub">${status}</div></div>
+    </div>`;
+}
+
+// ── PRADŽIA ───────────────────────────────────────────────────────────
+go('dashboard');
+
+// Kas 15 sek automatiškai atnaujinti dashboard
+setInterval(async()=>{
+  const cur=document.getElementById('ptitle').textContent;
+  await fetchData();
+  if(cur==='PAGRINDINĖ PANELĖ') renderDashboard(document.getElementById('content'));
+},15000);
+</script>
+</body>
+</html>
